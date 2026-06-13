@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.3);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.5);
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/70 dark:bg-dark-800/70 backdrop-blur-xl border border-white/20 dark:border-dark-600/20;
+  }
+
+  .glass-card {
+    @apply glass rounded-2xl shadow-lg dark:shadow-dark-950/30;
+  }
+
+  .glass-sidebar {
+    @apply bg-white/80 dark:bg-dark-900/80 backdrop-blur-2xl border-r border-white/10 dark:border-dark-700/30;
+  }
+
+  .glass-navbar {
+    @apply bg-white/60 dark:bg-dark-900/60 backdrop-blur-2xl border-b border-white/10 dark:border-dark-700/30;
+  }
+
+  .btn-primary {
+    @apply bg-smart-500 hover:bg-smart-600 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 shadow-lg shadow-smart-500/25 hover:shadow-smart-500/40 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-dark-100 dark:bg-dark-700 text-dark-700 dark:text-dark-200 font-medium px-6 py-3 rounded-xl transition-all duration-200 hover:bg-dark-200 dark:hover:bg-dark-600 active:scale-95;
+  }
+
+  .btn-danger {
+    @apply bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 shadow-lg shadow-red-500/25 hover:shadow-red-500/40 active:scale-95;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-white dark:bg-dark-800 border border-dark-200 dark:border-dark-600 rounded-xl text-dark-900 dark:text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-smart-500/50 focus:border-smart-500 transition-all duration-200;
+  }
+
+  .stat-card {
+    @apply glass-card p-6 transition-all duration-300 hover:shadow-xl;
+  }
+
+  .status-vide {
+    @apply bg-smart-100 text-smart-700 dark:bg-smart-900/30 dark:text-smart-400;
+  }
+
+  .status-en-cours {
+    @apply bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400;
+  }
+
+  .status-pleine {
+    @apply bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400;
+  }
+
+  .status-panne {
+    @apply bg-dark-200 text-dark-700 dark:bg-dark-700 dark:text-dark-300;
+  }
+
+  .skeleton {
+    @apply bg-dark-200 dark:bg-dark-700 rounded-lg animate-pulse;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-dark-500 dark:text-dark-400 hover:bg-smart-50 dark:hover:bg-smart-900/20 hover:text-smart-600 dark:hover:text-smart-400 transition-all duration-200;
+  }
+
+  .sidebar-link-active {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl bg-smart-50 dark:bg-smart-900/20 text-smart-600 dark:text-smart-400 font-semibold;
+  }
+
+  .table-row {
+    @apply border-b border-dark-100 dark:border-dark-700/50 hover:bg-dark-50 dark:hover:bg-dark-800/50 transition-colors duration-150;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-dark-900 dark:text-white;
+  }
+
+  .section-title {
+    @apply text-lg font-semibold text-dark-800 dark:text-dark-200;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-smart-500 to-smart-700 bg-clip-text text-transparent;
+  }
+
+  .glow-green {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.15), 0 0 40px rgba(34, 197, 94, 0.05);
+  }
+
+  .glow-green-strong {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3), 0 0 40px rgba(34, 197, 94, 0.1);
+  }
+}
+
+.leaflet-container {
+  border-radius: 1rem;
+  z-index: 1;
+}
+
+.dark .leaflet-tile-pane {
+  filter: brightness(0.7) contrast(1.1) saturate(0.8);
+}
+
+.dark .leaflet-container {
+  background: #0f172a;
+}
