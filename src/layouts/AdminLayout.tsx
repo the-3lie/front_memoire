@@ -21,6 +21,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useNotifications } from '../context/NotificationContext';
+import { useUnreadMessages } from '../hooks/useUnreadMessages';
 
 const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
@@ -40,6 +41,8 @@ export default function AdminLayout() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { unreadCount } = useNotifications();
+  // 🌟 NOUVEAU : nombre de messages non lus, pour le badge bleu sur le lien "Messages"
+  const unreadMessages = useUnreadMessages();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -75,7 +78,7 @@ export default function AdminLayout() {
               end={item.end}
               onClick={() => setMobileOpen(false)}
               className={({ isActive }) =>
-                `${isActive ? 'sidebar-link-active' : 'sidebar-link'} ${!sidebarOpen ? 'justify-center' : ''}`
+                `${isActive ? 'sidebar-link-active' : 'sidebar-link'} ${!sidebarOpen ? 'justify-center' : ''} relative`
               }
             >
               <item.icon className="w-5 h-5 shrink-0" />
@@ -84,6 +87,16 @@ export default function AdminLayout() {
                 <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                   {unreadCount}
                 </span>
+              )}
+              {/* 🌟 NOUVEAU : badge bleu sur le lien Messages, même pattern que Notifications */}
+              {item.label === 'Messages' && unreadMessages > 0 && sidebarOpen && (
+                <span className="ml-auto bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {unreadMessages > 9 ? '9+' : unreadMessages}
+                </span>
+              )}
+              {/* 🌟 Variante compacte si la sidebar est repliée (juste un point bleu) */}
+              {item.label === 'Messages' && unreadMessages > 0 && !sidebarOpen && (
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-blue-500 rounded-full" />
               )}
             </NavLink>
           ))}
@@ -118,7 +131,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-dark-50 dark:bg-dark-950 flex relative overflow-x-hidden">
-      
+
       {/* Desktop sidebar */}
       <motion.aside
         animate={{ width: sidebarOpen ? 260 : 72 }}
@@ -190,6 +203,18 @@ export default function AdminLayout() {
                 <Sun className="w-5 h-5 text-amber-400" />
               ) : (
                 <Moon className="w-5 h-5 text-dark-600" />
+              )}
+            </button>
+            {/* 🌟 NOUVEAU : raccourci messages dans la navbar du haut, même pattern que les notifications */}
+            <button
+              onClick={() => navigate('/admin/messages')}
+              className="relative p-2.5 rounded-xl hover:bg-dark-100 dark:hover:bg-dark-700 transition-colors"
+            >
+              <MessageSquare className="w-5 h-5 text-dark-600 dark:text-dark-400" />
+              {unreadMessages > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                  {unreadMessages > 9 ? '9+' : unreadMessages}
+                </span>
               )}
             </button>
             <button

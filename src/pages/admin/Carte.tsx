@@ -2,17 +2,15 @@ import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { motion } from 'framer-motion';
-import { MapPin, Navigation } from 'lucide-react';
+import { Navigation } from 'lucide-react';
 import Loader from '../../components/Loader';
 import NiveauBar from '../../components/NiveauBar';
 import StatusBadge from '../../components/StatusBadge';
 import { Poubelle } from '../../types';
 import * as poubelleApi from '../../api/poubelles';
 
-// 🌟 CRITIQUE : Importation obligatoire du CSS de Leaflet pour éviter la page blanche ou les tuiles brisées
 import 'leaflet/dist/leaflet.css';
 
-// Fix pour les icônes Leaflet par défaut qui buggent souvent avec Webpack/Vite
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -24,12 +22,13 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// Composant de recentrage dynamique
 function ChangeMapCenter({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
   useEffect(() => {
-    map.flyTo(center, zoom, { animate: true, duration: 1.5 });
-  }, [center, map, zoom]);
+    if (center && typeof center[0] === 'number' && typeof center[1] === 'number' && !isNaN(center[0])) {
+      map.flyTo(center, zoom, { animate: true, duration: 1.5 });
+    }
+  }, [center, zoom, map]);
   return null;
 }
 
@@ -53,17 +52,33 @@ export default function AdminCarte() {
   const [poubelles, setPoubelles] = useState<Poubelle[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Centre par défaut sur Abidjan
+  // Centre par défaut (Abidjan) au cas où l'API est vide ou corrompue
   const [mapCenter, setMapCenter] = useState<[number, number]>([5.3484, -4.0195]);
   const [mapZoom, setMapZoom] = useState(13);
 
   const chargerPoubelles = async () => {
     try {
       const data = await poubelleApi.getAll();
-      const listeValide = Array.isArray(data) ? data : [];
+      const listeBrute = Array.isArray(data) ? data : [];
+      
+      // 🛡️ NETTOYAGE ET CONVERSION ULTRA-STRICTE
+      const listeValide = listeBrute
+        .map(p => {
+          // Convertit de force les strings en nombres au cas où
+          const lat = typeof p.latitude === 'string' ? parseFloat(p.latitude) : p.latitude;
+          const lng = typeof p.longitude === 'string' ? parseFloat(p.longitude) : p.longitude;
+          return { ...p, latitude: lat, longitude: lng };
+        })
+        .filter(p => 
+          p && 
+          typeof p.latitude === 'number' && !isNaN(p.latitude) && p.latitude !== 0 &&
+          typeof p.longitude === 'number' && !isNaN(p.longitude) && p.longitude !== 0
+        );
+
       setPoubelles(listeValide);
       
-      if (listeValide.length > 0) {
+      // Ne change le centre que si la première poubelle est valide
+      if (listeValide.length > 0 && listeValide[0].latitude && listeValide[0].longitude) {
         setMapCenter([listeValide[0].latitude, listeValide[0].longitude]);
         setMapZoom(14);
       }
@@ -79,18 +94,27 @@ export default function AdminCarte() {
   }, []);
 
   const handleFocusPoubelle = (lat: number, lng: number) => {
-    setMapCenter([lat, lng]);
-    setMapZoom(16);
+    if (typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat)) {
+      setMapCenter([lat, lng]);
+      setMapZoom(16);
+    }
   };
 
   if (loading) return <Loader />;
+
+  // Vérification ultime avant d'envoyer les coordonnées à Leaflet
+  const isCenterValid = 
+    Array.isArray(mapCenter) && 
+    mapCenter.length === 2 && 
+    typeof mapCenter[0] === 'number' && !isNaN(mapCenter[0]) &&
+    typeof mapCenter[1] === 'number' && !isNaN(mapCenter[1]);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="page-title">Carte Interactive SmartTrash</h1>
-          <p className="text-dark-500 mt-1">{poubelles.length} poubelles configurées</p>
+          <p className="text-dark-500 mt-1">{poubelles.length} poubelles affichées</p>
         </div>
         
         <div className="flex gap-3 flex-wrap p-2 bg-slate-100 dark:bg-dark-900/40 rounded-xl">
@@ -103,7 +127,7 @@ export default function AdminCarte() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
-        {/* Barre latérale des boutons dynamiques */}
+        {/* Barre latérale */}
         <div className="lg:col-span-1 space-y-2 max-h-[550px] overflow-y-auto pr-1">
           <p className="text-xs font-bold uppercase text-dark-400 tracking-wider">Localiser sur la carte :</p>
           {poubelles.map((p) => (
@@ -121,49 +145,53 @@ export default function AdminCarte() {
           ))}
         </div>
 
-        {/* 🗺️ Conteneur de la carte - Hauteur fixe stricte en inline-style pour parer à la page blanche */}
+        {/* 🗺️ Conteneur de la carte */}
         <motion.div 
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
-          className="lg:col-span-3 rounded-2xl overflow-hidden shadow-md border border-slate-200 dark:border-dark-700"
-          style={{ height: '550px', position: 'relative' }}
+          className="lg:col-span-3 rounded-2xl overflow-hidden shadow-md border border-slate-200 dark:border-dark-700 bg-slate-100 flex items-center justify-center"
+          style={{ height: '550px', position: 'relative', zIndex: 1 }}
         >
-          <MapContainer 
-            center={mapCenter} 
-            zoom={mapZoom} 
-            style={{ height: '100%', width: '100%' }}
-            scrollWheelZoom={true}
-          >
-            <ChangeMapCenter center={mapCenter} zoom={mapZoom} />
+          {isCenterValid ? (
+            <MapContainer 
+              key={`${mapCenter[0]}-${mapCenter[1]}`} // Recrée la carte proprement si le centre change initialement
+              center={mapCenter} 
+              zoom={mapZoom} 
+              style={{ height: '100%', width: '100%' }}
+              scrollWheelZoom={true}
+            >
+              <ChangeMapCenter center={mapCenter} zoom={mapZoom} />
 
-            {/* 🌟 Optionnel : Tuiles OpenStreetMap configurées pour privilégier la langue française via le sous-domaine openstreetmap.fr */}
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png"
-            />
-            
-            {poubelles.map((p) => (
-              <Marker 
-                key={p.id || p._id} 
-                position={[p.latitude, p.longitude]} 
-                icon={createIcon(getStatusMarkerColor(p.statut, p.niveau))}
-              >
-                <Popup>
-                  <div className="p-1 min-w-[180px] text-slate-800">
-                    <h3 className="font-bold text-sm border-b pb-1 mb-1.5">{p.nom}</h3>
-                    <p className="text-[11px] text-slate-500">RFID: <span className="font-mono bg-slate-100 px-1 rounded">{p.rfid_uid || p.rfidUid}</span></p>
-                    <div className="my-2">
-                      <NiveauBar niveau={p.niveau} />
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png"
+              />
+              
+              {poubelles.map((p) => (
+                <Marker 
+                  key={p.id || p._id} 
+                  position={[p.latitude, p.longitude]} 
+                  icon={createIcon(getStatusMarkerColor(p.statut, p.niveau))}
+                >
+                  <Popup>
+                    <div className="p-1 min-w-[180px] text-slate-800">
+                      <h3 className="font-bold text-sm border-b pb-1 mb-1.5">{p.nom}</h3>
+                      <p className="text-[11px] text-slate-500">RFID: <span className="font-mono bg-slate-100 px-1 rounded">{p.rfid_uid || p.rfidUid}</span></p>
+                      <div className="my-2">
+                        <NiveauBar niveau={p.niveau} />
+                      </div>
+                      <div className="flex items-center justify-between text-xs pt-1">
+                        <span className="text-slate-500">Statut:</span>
+                        <StatusBadge status={p.statut} />
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      <span className="text-slate-500">Statut:</span>
-                      <StatusBadge status={p.statut} />
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          ) : (
+            <div className="text-sm text-slate-500">En attente de coordonnées de carte valides...</div>
+          )}
         </motion.div>
 
       </div>
